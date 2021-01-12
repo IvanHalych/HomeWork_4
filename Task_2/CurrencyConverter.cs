@@ -13,6 +13,7 @@ namespace Task_2
     public class CurrencyConverter
     {
         static readonly Regex regex = new Regex(@"^[A-Z]{3}$");
+        static List<Currency> list = new List<Currency>();
         public static void Run()
         {
             Console.WriteLine("Name program: Task 2. Currency converter");
@@ -27,26 +28,20 @@ namespace Task_2
                 string desired=null;
                 try
                 {
-                    var list = FileWork.Read();
+                    list = FileWork.Read();
                     source = EnterCurrency("Source");
                     desired = EnterCurrency("Desired");
                     decimal sum = EnterSum();
-                    Currency sourceCurrency;
-                    if (source == "UAH")
-                        sourceCurrency = new Currency(0, "UAH", 1, "UAH", "always");
-                    else
-                    {
-                        sourceCurrency = list.Find(f => f.Cc == source) ?? throw new CurrencyException(source);
-                    }
-                    Currency desiredCurrency;
-                    if (desired == "UAH")
-                        desiredCurrency = new Currency(0, "UAH", 1, "UAH", "always");
-                    else
-                    {
-                        desiredCurrency = list.Find(f => f.Cc == desired) ?? throw new CurrencyException(source);
-                    }   
+                    Currency sourceCurrency = FindCurrency(source);
+                    Currency desiredCurrency = FindCurrency(desired); 
                     decimal result = sum * (decimal)sourceCurrency.Rate / (decimal)desiredCurrency.Rate;
-                    Console.WriteLine($"{sum} {sourceCurrency.Cc} * {string.Format("{0:0.00}", (decimal)sourceCurrency.Rate /(decimal)desiredCurrency.Rate)} = {string.Format("{0:0.00}", result)} {desiredCurrency.Cc} (from {sourceCurrency.Exchangedate})");
+                    string date = "";
+                    if (sourceCurrency.Exchangedate != "always")
+                        date = sourceCurrency.Exchangedate;
+                    else
+                        date = desiredCurrency.Exchangedate;
+                     decimal cof = (decimal)sourceCurrency.Rate / (decimal)desiredCurrency.Rate;
+                     Console.WriteLine($"{sum} {sourceCurrency.Cc} * {string.Format("{0:0.00}", cof)} = {string.Format("{0:0.00}", result)} {desiredCurrency.Cc} (from {date})");
 
                     break;
                 }
@@ -60,12 +55,23 @@ namespace Task_2
                 }
             }
         }
+        static Currency FindCurrency(string currency)
+        {
+            if (currency == "UAH")
+               return new Currency(0, "UAH", 1, "UAH", "always");
+            else
+            {
+               return list.Find(f => f.Cc == currency) ?? throw new CurrencyException();
+            }
+        }
         static string EnterCurrency(string name)
         {
             while (true)
             {
                 Console.Write($"Enter {name} currency(not an empty string, 3 characters[A-Z]): ");
                 string input = Console.ReadLine();
+                input = input.Trim(' ');
+                input = input.ToUpper();
                 if (regex.IsMatch(input))
                     return input;
                 Console.WriteLine("Error Input. Please try again.");
@@ -77,6 +83,7 @@ namespace Task_2
             {
                 Console.Write("Enter Sum(non-negative decima number): ");
                 string input = Console.ReadLine();
+                input = input.Trim(' ');
                 if (decimal.TryParse(input, out decimal sum) && (sum >= 0))
                     return sum;
                 Console.WriteLine("Error Input. Please try again.");
